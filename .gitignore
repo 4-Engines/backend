@@ -12,3 +12,5 @@ env*
 .cache/
 .pytest_cache/
 .vscode
+4engine-env/
+.4engine-env/

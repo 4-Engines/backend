@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import mongoconn
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'wefiwuefhrgfhhyuewiokldapsodjfjaksdjkjekfjsd'
+app.config['SECRET_KEY'] = 'secret!'
 
 
 @app.route('/login',methods=['GET', 'POST'])
