@@ -1,3 +1,4 @@
+from bson import ObjectId
 import pymongo
 import bsonjs
 from bson.raw_bson import RawBSONDocument
@@ -6,7 +7,7 @@ from bson.json_util import dumps
 # <-------------------------------------------------------- CONNECTION
 from urllib.parse import quote_plus
 username = quote_plus('desarrollo')
-password = quote_plus('9i4AKtrGBCZZ9gOL')
+password = quote_plus('')
 cluster = 'cluster0'
 authSource = 'authSource'
 authMechanism = 'authMechanism'
@@ -29,9 +30,9 @@ def insertDatos(post) :
 	
 # <-------------------------------------------------------- UPDATE
 # Funcion para actualizar datos
-def updateDatos(id,post):
-	updatePost = collection.update({"username":id},post)
-	return updatePost
+def updatePost(id,post):
+	collection.update_one({"_id":ObjectId(id)},{ "$set": post})
+	
 # <-------------------------------------------------------- DELETE
 # Funcion para eliminar datos
 def deleteDatos(id):
@@ -39,15 +40,18 @@ def deleteDatos(id):
 	return deletePost
 # <-------------------------------------------------------- SELECT
 # Funcion para seleccionar datos
-def selectDatos(id):
-	selectPost = collection.find_one({"_id":ObjectId(id)})
+def selectDatosId(id):
+	selectPost =collection.find_one({"_id":ObjectId(id)})
 	return selectPost
+
 # <-------------------------------------------------------- SELECT username
 # Funcion para seleccionar datos por nombre
 def selectDatosUserName(username):
 	selectPost = list(collection.find({"username":username}))
-	
-	 
+	return selectPost
+
+def selectDatosEmail(email):
+	selectPost =list( collection.find({"email":email}))
 	return selectPost
 # <-------------------------------------------------------- INSERT car
 def insertCar(post) :

@@ -16,7 +16,7 @@ def send_email_confirm(email,username,id):
     server.quit()
     return True
 def send_email_pass(email,username,password):
-    gmail_user =''  
+    gmail_user ='4enfines@gmail.com'  
     gmail_password = ''
     msg = EmailMessage()
     msg.set_content('Bienvenido a la plataforma Sigea: '+username+'\n'+'Su contraseña es: '+password)

@@ -1,29 +1,29 @@
 from unicodedata import name
-from flask import Flask, jsonify, url_for,request
+from flask import Flask, jsonify,request
 from requests import delete
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import mongoconn
+import sendemail
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-
-
-@app.route('/login',methods=['GET', 'POST'])
+app.config['SECRET_KEY'] = 'secret'
+ 
+@app.route('/login',methods=['POST'])
 def login():
-    msj='Bienvenido a la aplicacion'
+    
     if request.method == 'POST':
         username = request.json['username']
         password = request.json['password']
         user = mongoconn.selectDatosUserName(username)
         for i in user:
-            print(i)
             if check_password_hash(i['password'], password):
                 return jsonify({'status':'ok','msj':'Bienvenido'},200)
             else:
                 return jsonify({'status':'error','message':'Usuario o contraseña incorrectos'},401)
         return jsonify(user)
-        
-    return jsonify({'msj':msj})
+    else:
+        return jsonify({'status':'error','message':'Metodo no permitido'},401) 
 @app.route('/create_user',methods=['GET', 'POST'])
 def comandoUrl():
     if request.method == 'POST':
@@ -44,12 +44,21 @@ def comandoUrl():
             'lastname': lastname,
             'phone': phone,
             'rol':rol,
+            'status':'no-active',
             'created_at': datetime.utcnow()
         }
-        insertPost = mongoconn.insertDatos(post)
-        
-        return jsonify({'status':'ok','msj':'Usuario creado'},200)
-    return jsonify({'status':'error','msj':'No se pudo crear el usuario'} ,401)
+        try:
+            mongoconn.insertDatos(post)
+            user = mongoconn.selectDatosUserName(username)
+            for i in user:
+                id=str(i["_id"] )
+            sendemail.send_email_confirm(email,username,id)
+            return jsonify({'status':'ok','msj':'Usuario creado'},200)
+        except:
+            return jsonify({'status':'error','msj':'Error al crear usuario'},401)
+    else:
+        return jsonify({'status':'error','msj':'Metodo no permitido'},401)
+
 @app.route('/update_user',methods=[ 'PUT'])
 def updateUser():
     if request.method == 'PUT':
@@ -78,7 +87,8 @@ def updateUser():
                 return jsonify({'status':'ok','msj':'Usuario actualizado'},200)
             else:
                 return jsonify({'status':'error' ,'msj':'Usuario no existe'} ,401)
-    return jsonify({'status':'error','msj':'No se pudo actualizar el usuario'} ,401)
+    else:
+        return jsonify({'status':'error','msj':'Metodo no permitido'},401)
 @app.route('/delete_user',methods=['GET', 'POST'])
 def deleteUser():
     if request.method == 'POST':
@@ -106,7 +116,8 @@ def newcar():
             return jsonify({'status':'ok','msj':'Auto creado'},200)
         except:
             return jsonify({'status':'error','msj':'No se pudo Cargar'},401)
-    return jsonify({'msj':'No se pudo crear el auto', 'status':'error'},401)
+    else:
+        return jsonify({'status':'error','msj':'Metodo no permitido'},401)
 @app.route('/updatecar',methods=['PUT'])
 def updatecar():
     if request.method == 'POST':
@@ -125,10 +136,12 @@ def updatecar():
             'created_at': datetime.utcnow()
         }
         try:
-            updatePost = mongoconn.updateCar(id,post)
+            mongoconn.updateCar(id,post)
             return jsonify({'msj':'Auto actualizado'},200)
         except:
             return jsonify({'status':'error','msj':'No se pudo actualizar'},401)
+    else:
+        return jsonify({'status':'error','msj':'Metodo no permitido'},401)
 @app.route('/deletecar',methods=['GET', 'POST'])
 def deletecar():
     if request.method == 'POST':
@@ -138,6 +151,8 @@ def deletecar():
             return jsonify({'status':'ok','msj':'Auto eliminado'},200)
         except:
             return jsonify({'status':'error','msj':'No se pudo eliminar'},401)
+    else:
+        return jsonify({'status':'error','msj':'Metodo no permitido'},401)
 @app.route('/altataller',methods=['GET', 'POST'])
 def admin():
     msj="Admin"
@@ -149,6 +164,21 @@ def exito():
     msj="exito"
     
     return jsonify(msj=msj)
+@app.route('/confirm/<string:id>',methods=['GET', 'POST'])
+def confirm(id):
+    print(id)
+    try:
+        user=mongoconn.selectDatosId(id)
+        status=user['status']
+        print(status)
+        if status=='no-active':
+            status='active'
+            mongoconn.updatePost(id,{'status':status})
+            return jsonify({'status':'ok','msj':'Usuario activado'},200)
+        else:
+            return jsonify({'status':'error','msj':'Usuario ya confirmado'},401)
+    except:
+        return jsonify({'status':'error','msj':'Usuario no existe'},401)
     
 if __name__ == '__main__':
     app.run(port=3000,debug=True)
